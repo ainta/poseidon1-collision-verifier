@@ -25,7 +25,7 @@ Verification is pinned to the Poseidon Initiative's [`khovratovich/poseidon-tool
 
 ## Run
 
-Requirements: Python 3.9 or later, Git, and internet access.
+Requirements: Python 3.10 or later, Git, and internet access.
 
 ```bash
 git clone https://github.com/ainta/poseidon1-collision-verifier.git

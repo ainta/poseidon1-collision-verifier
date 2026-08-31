@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Run the collision witness through the pinned official verifier."""
 
+import importlib
 import json
 import subprocess
 import sys
 import tempfile
-import types
 from pathlib import Path
 
 
@@ -51,25 +51,13 @@ def fetch_official_verifier(destination):
 
 def load_official_verifier(repository):
     sys.path.insert(0, str(repository))
-    verifier_path = repository / "bounties" / "partial_collision_verifier.py"
-    source = verifier_path.read_text(encoding="utf-8")
-    module = types.ModuleType("official_partial_collision_verifier")
-    module.__file__ = str(verifier_path)
-
-    # The future import preserves official behavior while allowing its Python
-    # 3.10 type annotations to load on Python 3.9 as well.
-    exec(
-        compile(
-            "from __future__ import annotations\n" + source,
-            str(verifier_path),
-            "exec",
-        ),
-        module.__dict__,
-    )
-    return module
+    return importlib.import_module("bounties.partial_collision_verifier")
 
 
 def main():
+    if sys.version_info < (3, 10):
+        raise SystemExit("Python 3.10 or later is required.")
+
     solution = json.loads((HERE / "solution.json").read_text(encoding="utf-8"))
 
     with tempfile.TemporaryDirectory(prefix="poseidon-official-") as temporary:
