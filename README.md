@@ -1,10 +1,10 @@
-# Poseidon-31 Custom-Matrix Collision Reproduction
+# Poseidon1 Collision Reproduction
 
 ## Collision
 
 This repository reproduces the full-round collision described in [*Midpoint Reset: A Full-Round Poseidon Collision from an Adaptively Chosen MDS Matrix*](https://eprint.iacr.org/2026/1760).
 
-`solution.json` contains two distinct 15-element inputs, `X` and `Y`, and an MDS matrix `M` chosen after the round constants were fixed for the Poseidon-31 compression instance:
+`solution.json` contains two distinct 15-element inputs, `X` and `Y`, and an MDS matrix `M` chosen after the round constants were fixed for the Poseidon1 compression instance:
 
 - field: `p = 2130706433`
 - S-box: `x³`
