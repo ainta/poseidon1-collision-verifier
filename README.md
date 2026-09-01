@@ -23,9 +23,11 @@ Using the [Poseidon Initiative](https://www.poseidon-initiative.info/)'s verifie
 
 Verification is pinned to the Poseidon Initiative's [`khovratovich/poseidon-tools`](https://github.com/khovratovich/poseidon-tools) commit `60075da7c0521d9493749a035b1f30d4eda37138`. `verify.py` fetches that commit and calls its `verify_collision_solution` function directly; it contains no alternative Poseidon implementation.
 
+The official `verify_mds_matrix` routine checks Poseidon-specific subspace criteria, but not the classical MDS requirement that every square minor be nonzero. The local `verify_mds.cpp` therefore performs that check independently by enumerating all 601,080,389 nonempty square minors over the field.
+
 ## Run
 
-Requirements: Python 3.10 or later, Git, and internet access.
+Requirements: Python 3.10 or later, Git, a C++17 compiler, about 4 GB of free RAM, and internet access.
 
 ```bash
 git clone https://github.com/ainta/poseidon1-collision-verifier.git
@@ -37,4 +39,5 @@ Successful verification ends with:
 
 ```text
 official_t16 True
+independent_mds ALL_NONEMPTY_SQUARE_MINORS_NONZERO
 ```

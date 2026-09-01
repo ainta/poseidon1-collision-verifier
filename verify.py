@@ -3,6 +3,7 @@
 
 import importlib
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -14,18 +15,19 @@ OFFICIAL_COMMIT = "60075da7c0521d9493749a035b1f30d4eda37138"
 HERE = Path(__file__).resolve().parent
 
 
-def run(command, cwd):
+def run(command, cwd, input_text=None):
     try:
         return subprocess.run(
             command,
             cwd=cwd,
             check=True,
             text=True,
+            input=input_text,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         ).stdout.strip()
     except FileNotFoundError as error:
-        raise SystemExit("Git is required to fetch the official verifier.") from error
+        raise SystemExit(f"Required program not found: {command[0]}") from error
     except subprocess.CalledProcessError as error:
         detail = error.stderr.strip() or error.stdout.strip()
         raise SystemExit(f"Command failed: {' '.join(command)}\n{detail}") from error
@@ -52,6 +54,41 @@ def fetch_official_verifier(destination):
 def load_official_verifier(repository):
     sys.path.insert(0, str(repository))
     return importlib.import_module("bounties.partial_collision_verifier")
+
+
+def verify_mds_independently(matrix, prime, build_directory):
+    size = len(matrix)
+    if size == 0 or any(len(row) != size for row in matrix):
+        raise SystemExit("M must be a non-empty square matrix.")
+
+    compiler = next(
+        (path for name in ("c++", "clang++", "g++") if (path := shutil.which(name))),
+        None,
+    )
+    if compiler is None:
+        raise SystemExit("A C++17 compiler is required for the independent MDS check.")
+
+    binary = build_directory / "verify_mds"
+    run(
+        [
+            compiler,
+            "-std=c++17",
+            "-O3",
+            "-pthread",
+            str(HERE / "verify_mds.cpp"),
+            "-o",
+            str(binary),
+        ],
+        HERE,
+    )
+    matrix_input = "\n".join(
+        [f"{size} {prime}", *(" ".join(map(str, row)) for row in matrix)]
+    )
+    output = run([str(binary)], HERE, input_text=matrix_input)
+    result = output.splitlines()[-1] if output else ""
+    if result != "ALL_NONEMPTY_SQUARE_MINORS_NONZERO":
+        raise SystemExit(f"Independent MDS verification failed:\n{output}")
+    return result
 
 
 def main():
@@ -109,12 +146,18 @@ def main():
         )
 
         verified = official.verify_collision_solution(x, y, t=16, mds=matrix)
+        independent_mds = verify_mds_independently(
+            matrix,
+            official.COLLISION_P,
+            Path(temporary),
+        )
 
     print("official_commit", actual_commit)
     print("X_distinct_Y", x != y)
     print("H(X)", hash_x)
     print("H(Y)", hash_y)
     print("official_t16", verified)
+    print("independent_mds", independent_mds)
 
     if x == y or hash_x != hash_y or not verified:
         raise SystemExit("Verification failed.")
